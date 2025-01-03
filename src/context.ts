@@ -1,8 +1,13 @@
-import React, { createContext, useContext } from 'react';
-import { Animated } from 'react-native';
+import { createContext, useContext } from "react";
+import { Animated } from "react-native";
 
-import type { SharedValue } from 'react-native-reanimated';
-import type { KeyboardHandlers } from './types';
+import type {
+  FocusedInputHandler,
+  FocusedInputLayoutChangedEvent,
+  KeyboardHandler,
+} from "./types";
+import type React from "react";
+import type { SharedValue } from "react-native-reanimated";
 
 export type AnimatedContext = {
   progress: Animated.Value;
@@ -16,16 +21,25 @@ export type KeyboardAnimationContext = {
   enabled: boolean;
   animated: AnimatedContext;
   reanimated: ReanimatedContext;
-  setHandlers: (handlers: KeyboardHandlers) => void;
+  layout: SharedValue<FocusedInputLayoutChangedEvent | null>;
+  setKeyboardHandlers: (handlers: KeyboardHandler) => () => void;
+  setInputHandlers: (handlers: FocusedInputHandler) => () => void;
   setEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 };
 const NOOP = () => {};
-const DEFAULT_SHARED_VALUE: SharedValue<number> = {
-  value: 0,
+const NESTED_NOOP = () => NOOP;
+const withSharedValue = <T>(value: T): SharedValue<T> => ({
+  value,
   addListener: NOOP,
   removeListener: NOOP,
   modify: NOOP,
-};
+  get: () => value,
+  set: NOOP,
+});
+const DEFAULT_SHARED_VALUE = withSharedValue(0);
+const DEFAULT_LAYOUT = withSharedValue<FocusedInputLayoutChangedEvent | null>(
+  null,
+);
 const defaultContext: KeyboardAnimationContext = {
   enabled: true,
   animated: {
@@ -36,16 +50,19 @@ const defaultContext: KeyboardAnimationContext = {
     progress: DEFAULT_SHARED_VALUE,
     height: DEFAULT_SHARED_VALUE,
   },
-  setHandlers: NOOP,
+  layout: DEFAULT_LAYOUT,
+  setKeyboardHandlers: NESTED_NOOP,
+  setInputHandlers: NESTED_NOOP,
   setEnabled: NOOP,
 };
+
 export const KeyboardContext = createContext(defaultContext);
 export const useKeyboardContext = () => {
   const context = useContext(KeyboardContext);
 
   if (__DEV__ && context === defaultContext) {
     console.warn(
-      "Couldn't find real values for `KeyboardContext`. Please make sure you're inside of `KeyboardProvider` - otherwise functionality of `react-native-keyboard-controller` will not work."
+      "Couldn't find real values for `KeyboardContext`. Please make sure you're inside of `KeyboardProvider` - otherwise functionality of `react-native-keyboard-controller` will not work.",
     );
   }
 

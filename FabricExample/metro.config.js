@@ -1,16 +1,18 @@
-const path = require('path');
-const exclusionList = require('metro-config/src/defaults/exclusionList');
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
-const escape = require('escape-string-regexp');
-const pack = require('../package.json');
+const path = require("path");
 
-const root = path.resolve(__dirname, '..');
+const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
+const escape = require("escape-string-regexp");
+const exclusionList = require("metro-config/src/defaults/exclusionList");
+
+const pack = require("../package.json");
+
+const root = path.resolve(__dirname, "..");
 
 const modules = Object.keys(pack.peerDependencies);
 
 /**
  * Metro configuration
- * https://facebook.github.io/metro/docs/configuration
+ * https://reactnative.dev/docs/metro
  *
  * @type {import('metro-config').MetroConfig}
  */
@@ -24,14 +26,25 @@ const config = {
     blacklistRE: exclusionList(
       modules.map(
         (m) =>
-          new RegExp(`^${escape(path.join(root, 'node_modules', m))}\\/.*$`)
-      )
+          new RegExp(`^${escape(path.join(root, "node_modules", m))}\\/.*$`),
+      ),
     ),
 
-    extraNodeModules: modules.reduce((acc, name) => {
-      acc[name] = path.join(__dirname, 'node_modules', name);
-      return acc;
-    }, {}),
+    extraNodeModules: modules.reduce(
+      (acc, name) => {
+        acc[name] = path.join(__dirname, "node_modules", name);
+
+        return acc;
+      },
+      {
+        // required from RN 0.73
+        "react-native-keyboard-controller": path.join(
+          __dirname,
+          "node_modules",
+          "react-native-keyboard-controller",
+        ),
+      },
+    ),
   },
 };
 

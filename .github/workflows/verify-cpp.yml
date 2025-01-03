@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/verify-cpp.yml'
-      - 'android/src/main/**'
+      - ".github/workflows/verify-cpp.yml"
+      - "android/src/main/**"
   pull_request:
     paths:
-      - '.github/workflows/verify-cpp.yml'
-      - 'android/src/main/**'
+      - ".github/workflows/verify-cpp.yml"
+      - "android/src/main/**"
 
 jobs:
   lint:
@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.13]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 

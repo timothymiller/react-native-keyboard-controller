@@ -17,6 +17,12 @@
 
 #import "KeyboardControllerModule-Header.h"
 
+#if __has_include("react_native_keyboard_controller-Swift.h")
+#import "react_native_keyboard_controller-Swift.h"
+#else
+#import <react_native_keyboard_controller/react_native_keyboard_controller-Swift.h>
+#endif
+
 #import <React/RCTEventDispatcherProtocol.h>
 
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -61,6 +67,26 @@ RCT_EXPORT_METHOD(setInputMode : (nonnull NSNumber *)mode)
 {
 }
 
+#ifdef RCT_NEW_ARCH_ENABLED
+- (void)dismiss:(BOOL)keepFocus
+#else
+RCT_EXPORT_METHOD(dismiss : (BOOL)keepFocus)
+#endif
+{
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [KeyboardControllerModuleImpl dismiss:keepFocus];
+  });
+}
+
+#ifdef RCT_NEW_ARCH_ENABLED
+- (void)setFocusTo:(NSString *)direction
+#else
+RCT_EXPORT_METHOD(setFocusTo : (nonnull NSString *)direction)
+#endif
+{
+  [ViewHierarchyNavigator setFocusToDirection:direction];
+}
+
 + (KeyboardController *)shared
 {
   return shared;
@@ -86,10 +112,13 @@ RCT_EXPORT_METHOD(setInputMode : (nonnull NSNumber *)mode)
 - (NSArray<NSString *> *)supportedEvents
 {
   return @[
+    // keyboard
     @"KeyboardController::keyboardWillShow",
     @"KeyboardController::keyboardDidShow",
     @"KeyboardController::keyboardWillHide",
     @"KeyboardController::keyboardDidHide",
+    // focused input
+    @"KeyboardController::focusDidSet",
   ];
 }
 

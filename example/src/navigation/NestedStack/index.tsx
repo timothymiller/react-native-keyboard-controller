@@ -1,32 +1,31 @@
-import React from 'react';
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
 
-import {
-  createNativeStackNavigator,
-  NativeStackNavigationOptions,
-} from '@react-navigation/native-stack';
+import { ScreenNames } from "../../constants/screenNames";
+import KeyboardAnimation from "../../screens/Examples/KeyboardAnimation";
 
-import { ScreenNames } from '../../constants/screenNames';
-import KeyboardAnimation from '../../screens/Examples/KeyboardAnimation';
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 
 export type NativeStackParamList = {
-  [ScreenNames.NATIVE_STACK]: {};
+  [ScreenNames.NATIVE]: undefined;
 };
 
 const Stack = createNativeStackNavigator<NativeStackParamList>();
 
 const options: Record<string, NativeStackNavigationOptions> = {
-  [ScreenNames.NATIVE_STACK]: {
+  [ScreenNames.NATIVE]: {
     headerShown: false,
     statusBarTranslucent: true,
+    navigationBarColor: "#FFFFFF",
   },
 };
 
 const NativeStack = () => (
-  <Stack.Navigator initialRouteName={ScreenNames.NATIVE_STACK}>
+  <Stack.Navigator initialRouteName={ScreenNames.NATIVE}>
     <Stack.Screen
-      name={ScreenNames.NATIVE_STACK}
       component={KeyboardAnimation}
-      options={options[ScreenNames.NATIVE_STACK]}
+      name={ScreenNames.NATIVE}
+      options={options[ScreenNames.NATIVE]}
     />
   </Stack.Navigator>
 );

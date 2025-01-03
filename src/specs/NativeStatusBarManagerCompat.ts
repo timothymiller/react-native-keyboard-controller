@@ -1,5 +1,6 @@
-import type { TurboModule } from 'react-native';
-import { TurboModuleRegistry } from 'react-native';
+import { TurboModuleRegistry } from "react-native";
+
+import type { TurboModule } from "react-native";
 
 export interface Spec extends TurboModule {
   readonly getConstants: () => {};
@@ -10,4 +11,4 @@ export interface Spec extends TurboModule {
   setStyle(style: string): void;
 }
 
-export default TurboModuleRegistry.get<Spec>('StatusBarManagerCompat');
+export default TurboModuleRegistry.get<Spec>("StatusBarManagerCompat");

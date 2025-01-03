@@ -1,7 +1,8 @@
 ---
 sidebar_position: 4
 description: Compatibility of library with different react-native versions and architectures
-keywords: [react-native-keyboard-controller, compatibility, react-native versions]
+keywords:
+  [react-native-keyboard-controller, compatibility, react-native versions]
 ---
 
 # Compatibility
@@ -12,7 +13,7 @@ If you found an incompatibility or conflict with other open source libraries - d
 
 :::
 
-## React Native
+## `react-native`
 
 Below you can find an information about compatibility with `react-native` package per different architectures.
 
@@ -22,19 +23,27 @@ Starting from `1.2.0` this library adds support for a new architecture called `F
 
 Below you can find a table with supported versions:
 
-|library version|react-native version|
-|-------|--------------------|
-|1.3.0+ | 0.70.0+            |
-|1.2.0+ | 0.69.0+            |
+| library version | react-native version |
+| --------------- | -------------------- |
+| 1.6.0+          | 0.72.0+              |
+| 1.5.0+          | 0.71.0+              |
+| 1.3.0+          | 0.70.0+              |
+| 1.2.0+          | 0.69.0+              |
 
 ### Paper (old) architecture
 
 This library supports as minimal `react-native` version as possible. However it was decided to drop a support for some really old versions for better development workflow and future support.
 
-|library version|react-native version|
-|-------|--------------------|
-|1.7.0+ | 0.65.0+            |
-|1.0.0+ | 0.62.0+            |
+| library version | react-native version |
+| --------------- | -------------------- |
+| 1.7.0+          | 0.65.0+              |
+| 1.0.0+          | 0.62.0+              |
+
+## `react-native-reanimated`
+
+This library is heavily relies on `react-native-reanimated` primitives to bring advanced concepts for keyboard handling.
+
+The minimal supported version of `react-native-reanimated` is `2.3.0`.
 
 ## Third-party libraries compatibility
 

@@ -4,9 +4,10 @@ import android.graphics.Rect
 import android.os.Build
 import android.view.View
 import androidx.annotation.RequiresApi
+import com.reactnativekeyboardcontroller.log.Logger
 
 /**
- * Call this everytime when using [ViewCompat.setOnApplyWindowInsetsListener]
+ * Call this every time when using [ViewCompat.setOnApplyWindowInsetsListener]
  * to ensure that insets are always received.
  * @see https://stackoverflow.com/a/61909205/9272042
  */
@@ -17,16 +18,18 @@ fun View.requestApplyInsetsWhenAttached() {
     requestApplyInsets()
   } else {
     // We're not attached to the hierarchy, add a listener to request when we are
-    addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-      override fun onViewAttachedToWindow(v: View) {
-        v.removeOnAttachStateChangeListener(this)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-          v.requestApplyInsets()
+    addOnAttachStateChangeListener(
+      object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) {
+          v.removeOnAttachStateChangeListener(this)
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            v.requestApplyInsets()
+          }
         }
-      }
 
-      override fun onViewDetachedFromWindow(v: View) = Unit
-    })
+        override fun onViewDetachedFromWindow(v: View) = Unit
+      },
+    )
   }
 }
 
@@ -37,14 +40,18 @@ private val tmpIntArr = IntArray(2)
  */
 @RequiresApi(Build.VERSION_CODES.KITKAT)
 fun View.copyBoundsInWindow(rect: Rect) {
-  if (isLaidOut && isAttachedToWindow) {
+  if (isAttachedToWindow) {
     rect.set(0, 0, width, height)
     getLocationInWindow(tmpIntArr)
     rect.offset(tmpIntArr[0], tmpIntArr[1])
   } else {
-    throw IllegalArgumentException(
-      "Can not copy bounds as view is not laid out" +
-        " or attached to window",
-    )
+    Logger.w("View.copyBoundsInWindow", "Can not copy bounds as view is not attached to window")
   }
+}
+
+val View.screenLocation get(): IntArray {
+  val point = IntArray(2)
+  getLocationOnScreen(point)
+
+  return point
 }

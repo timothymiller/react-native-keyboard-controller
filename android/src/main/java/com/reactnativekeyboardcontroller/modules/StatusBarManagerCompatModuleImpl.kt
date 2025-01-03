@@ -2,18 +2,25 @@ package com.reactnativekeyboardcontroller.modules
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.app.Activity
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.UiThreadUtil
+import com.reactnativekeyboardcontroller.extensions.rootView
+import com.reactnativekeyboardcontroller.log.Logger
+import com.reactnativekeyboardcontroller.views.EdgeToEdgeReactViewGroup
+import java.lang.ref.WeakReference
 
 private val TAG = StatusBarManagerCompatModuleImpl::class.qualifiedName
 
-class StatusBarManagerCompatModuleImpl(private val mReactContext: ReactApplicationContext) {
+class StatusBarManagerCompatModuleImpl(
+  private val mReactContext: ReactApplicationContext,
+) {
   private var controller: WindowInsetsControllerCompat? = null
+  private var lastActivity = WeakReference<Activity?>(null)
 
   fun setHidden(hidden: Boolean) {
     UiThreadUtil.runOnUiThread {
@@ -26,10 +33,13 @@ class StatusBarManagerCompatModuleImpl(private val mReactContext: ReactApplicati
   }
 
   @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-  fun setColor(color: Int, animated: Boolean) {
+  fun setColor(
+    color: Int,
+    animated: Boolean,
+  ) {
     val activity = mReactContext.currentActivity
     if (activity == null) {
-      Log.w(TAG, "StatusBarManagerCompatModule: Ignored status bar change, current activity is null.")
+      Logger.w(TAG, "StatusBarManagerCompatModule: Ignored status bar change, current activity is null.")
       return
     }
 
@@ -50,19 +60,11 @@ class StatusBarManagerCompatModuleImpl(private val mReactContext: ReactApplicati
     }
   }
 
-  @Suppress("detekt:UnusedParameter")
   fun setTranslucent(translucent: Boolean) {
-    // the status bar is translucent by default (once you wrapped App in Provider,
-    // and EdgeToEdgeReactViewGroup has been mounted and called
-    // `setDecorFitsSystemWindows(window, false)`. By default this library applies default padding
-    // which equal to StatusBar height, so it will have a default RN app behavior. Though once you
-    // need to set StatusBar as translucent, you will need to use `statusBarTranslucent` prop on
-    // `KeyboardProvider` (it will preventing of applying additional padding, and status bar will be
-    // translucent. Though it's important to note, that this value is not reactive (i. e. if you change
-    // `statusBarTranslucent` in runtime it will not have any effect. Just theoretically I could make
-    // it reactive, but I know, that most of apps or don't use StatusBar translucency at all or they are
-    // specifying it for entire app, so I don't see a lot of sense to make it reactive as of now. If your
-    // app requires to dynamically manage it - just shoot an issue and I will try to add a support fot that.
+    UiThreadUtil.runOnUiThread {
+      val view = mReactContext.rootView?.findViewWithTag<EdgeToEdgeReactViewGroup>(EdgeToEdgeReactViewGroup.VIEW_TAG)
+      view?.forceStatusBarTranslucent(translucent)
+    }
   }
 
   fun setStyle(style: String) {
@@ -72,10 +74,11 @@ class StatusBarManagerCompatModuleImpl(private val mReactContext: ReactApplicati
   }
 
   private fun getController(): WindowInsetsControllerCompat? {
-    if (this.controller == null) {
-      val activity = mReactContext.currentActivity
+    val activity = mReactContext.currentActivity
+
+    if (this.controller == null || activity != lastActivity.get()) {
       if (activity == null) {
-        Log.w(
+        Logger.w(
           TAG,
           "StatusBarManagerCompatModule: can not get `WindowInsetsControllerCompat` because current activity is null.",
         )
@@ -83,6 +86,7 @@ class StatusBarManagerCompatModuleImpl(private val mReactContext: ReactApplicati
       }
 
       val window = activity.window
+      lastActivity = WeakReference(activity)
 
       this.controller = WindowInsetsControllerCompat(window, window.decorView)
     }

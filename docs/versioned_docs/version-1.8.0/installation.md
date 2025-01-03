@@ -1,7 +1,17 @@
 ---
 sidebar_position: 1
 description: Guide dedicated to installation process
-keywords: [react-native-keyboard-controller, react-native keyboard, installation, setup, keyboard handling, keyboard animation, keyboard movement, troubleshooting]
+keywords:
+  [
+    react-native-keyboard-controller,
+    react-native keyboard,
+    installation,
+    setup,
+    keyboard handling,
+    keyboard animation,
+    keyboard movement,
+    troubleshooting,
+  ]
 ---
 
 # Installation
@@ -15,6 +25,11 @@ yarn add react-native-keyboard-controller
 # or with npm
 # npm install react-native-keyboard-controller --save
 ```
+
+:::warning Mandatory `react-native-reanimated` dependency
+
+This library requires `react-native-reanimated` to work properly. If you don't have it in your project, you need to follow [installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/#installation) and install it in your project before using this library.
+:::
 
 ### Linking
 
@@ -41,12 +56,12 @@ If you are bothered why it's needed, you can read more about it in [architecture
 :::
 
 ```tsx
-import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 export default function App() {
   return (
     <KeyboardProvider>
-      // your code here
+      {/* your main application code goes here */}
     </KeyboardProvider>
   );
 }

@@ -3,7 +3,9 @@ package com.reactnativekeyboardcontroller
 import com.facebook.react.bridge.ReactApplicationContext
 import com.reactnativekeyboardcontroller.modules.KeyboardControllerModuleImpl
 
-class KeyboardControllerModule(mReactContext: ReactApplicationContext) : NativeKeyboardControllerSpec(mReactContext) {
+class KeyboardControllerModule(
+  mReactContext: ReactApplicationContext,
+) : NativeKeyboardControllerSpec(mReactContext) {
   private val module = KeyboardControllerModuleImpl(mReactContext)
 
   override fun getName(): String = KeyboardControllerModuleImpl.NAME
@@ -16,11 +18,19 @@ class KeyboardControllerModule(mReactContext: ReactApplicationContext) : NativeK
     module.setDefaultMode()
   }
 
+  override fun dismiss(keepFocus: Boolean) {
+    module.dismiss(keepFocus)
+  }
+
+  override fun setFocusTo(direction: String) {
+    module.setFocusTo(direction)
+  }
+
   override fun addListener(eventName: String?) {
-    /* Required for RN built-in Event Emitter Calls. */
+    // Required for RN built-in Event Emitter Calls.
   }
 
   override fun removeListeners(count: Double) {
-    /* Required for RN built-in Event Emitter Calls. */
+    // Required for RN built-in Event Emitter Calls.
   }
 }

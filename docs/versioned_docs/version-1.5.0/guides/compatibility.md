@@ -1,27 +1,35 @@
 ---
 sidebar_position: 4
 description: Compatibility of library with different react-native versions and architectures
-keywords: [react-native-keyboard-controller, compatibility, react-native versions]
+keywords:
+  [react-native-keyboard-controller, compatibility, react-native versions]
 ---
 
 # Compatibility
 
-## React Native
+## `react-native`
 
 Starting from `1.2.0` this library adds support for a new architecture called `Fabric`. Since a new architecture is still in adoption stage and it changes some APIs over time - it's highly recommended to use versions which are compatible and were intensively tested against specific `react-native` versions.
 
 Below you can find a table with supported versions:
 
-|library version|react-native version|
-|-------|--------------------|
-|1.3.0+ | 0.70.0+            |
-|1.2.0+ | 0.69.0+            |
+| library version | react-native version |
+| --------------- | -------------------- |
+| 1.5.0+          | 0.71.0+              |
+| 1.3.0+          | 0.70.0+              |
+| 1.2.0+          | 0.69.0+              |
 
 :::info
 
 For `Paper` (old) architecture there is no any restrictions. If you found an incompatibility - don't hesitate to open an [issue](https://github.com/kirillzyusko/react-native-keyboard-controller/issues/new?assignees=kirillzyusko&labels=bug&template=bug_report.md&title=). It will help the project 🙏
 
 :::
+
+## `react-native-reanimated`
+
+This library is heavily relies on `react-native-reanimated` primitives to bring advanced concepts for keyboard handling.
+
+The minimal supported version of `react-native-reanimated` is `2.3.0`.
 
 ## Third-party libraries compatibility
 

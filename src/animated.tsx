@@ -1,23 +1,36 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Animated, Platform, StyleSheet, ViewStyle } from 'react-native';
-import Reanimated, { useSharedValue } from 'react-native-reanimated';
+/* eslint react/jsx-sort-props: off */
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Animated, Platform, StyleSheet } from "react-native";
+import {
+  controlEdgeToEdgeValues,
+  isEdgeToEdge,
+} from "react-native-is-edge-to-edge";
+import Reanimated, { useSharedValue } from "react-native-reanimated";
 
-import { KeyboardAnimationContext, KeyboardContext } from './context';
-import { useSharedHandlers, useAnimatedValue } from './internal';
-import { KeyboardControllerView } from './bindings';
-import { useAnimatedKeyboardHandler } from './reanimated';
+import { KeyboardControllerView } from "./bindings";
+import { KeyboardContext } from "./context";
+import { focusedInputEventsMap, keyboardEventsMap } from "./event-mappings";
+import { useAnimatedValue, useEventHandlerRegistration } from "./internal";
+import { applyMonkeyPatch, revertMonkeyPatch } from "./monkey-patch";
+import {
+  useAnimatedKeyboardHandler,
+  useFocusedInputLayoutHandler,
+} from "./reanimated";
 
+import type { KeyboardAnimationContext } from "./context";
 import type {
+  FocusedInputHandler,
+  FocusedInputLayoutChangedEvent,
   KeyboardControllerProps,
   KeyboardHandler,
   NativeEvent,
-} from './types';
-import { applyMonkeyPatch, revertMonkeyPatch } from './monkey-patch';
+} from "./types";
+import type { ViewStyle } from "react-native";
+
+const IS_EDGE_TO_EDGE = isEdgeToEdge();
 
 const KeyboardControllerViewAnimated = Reanimated.createAnimatedComponent(
-  Animated.createAnimatedComponent(
-    KeyboardControllerView
-  ) as React.FC<KeyboardControllerProps>
+  Animated.createAnimatedComponent(KeyboardControllerView),
 );
 
 type Styles = {
@@ -30,8 +43,8 @@ const styles = StyleSheet.create<Styles>({
     flex: 1,
   },
   hidden: {
-    display: 'none',
-    position: 'absolute',
+    display: "none",
+    position: "absolute",
   },
 });
 
@@ -64,12 +77,19 @@ type KeyboardProviderProps = {
   enabled?: boolean;
 };
 
+// capture `Platform.OS` in separate variable to avoid deep workletization of entire RN package
+// see https://github.com/kirillzyusko/react-native-keyboard-controller/issues/393 and https://github.com/kirillzyusko/react-native-keyboard-controller/issues/294 for more details
+const OS = Platform.OS;
+
 export const KeyboardProvider = ({
   children,
   statusBarTranslucent,
   navigationBarTranslucent,
   enabled: initiallyEnabled = true,
 }: KeyboardProviderProps) => {
+  // ref
+  const viewTagRef = useRef<React.Component<KeyboardControllerProps>>(null);
+  // state
   const [enabled, setEnabled] = useState(initiallyEnabled);
   // animated values
   const progress = useAnimatedValue(0);
@@ -77,24 +97,34 @@ export const KeyboardProvider = ({
   // shared values
   const progressSV = useSharedValue(0);
   const heightSV = useSharedValue(0);
-  const { setHandlers, broadcast } = useSharedHandlers<KeyboardHandler>();
+  const layout = useSharedValue<FocusedInputLayoutChangedEvent | null>(null);
+  const setKeyboardHandlers = useEventHandlerRegistration<KeyboardHandler>(
+    keyboardEventsMap,
+    viewTagRef,
+  );
+  const setInputHandlers = useEventHandlerRegistration<FocusedInputHandler>(
+    focusedInputEventsMap,
+    viewTagRef,
+  );
   // memo
   const context = useMemo<KeyboardAnimationContext>(
     () => ({
       enabled,
       animated: { progress: progress, height: Animated.multiply(height, -1) },
       reanimated: { progress: progressSV, height: heightSV },
-      setHandlers,
+      layout,
+      setKeyboardHandlers,
+      setInputHandlers,
       setEnabled,
     }),
-    [enabled]
+    [enabled],
   );
   const style = useMemo(
     () => [
       styles.hidden,
       { transform: [{ translateX: height }, { translateY: progress }] },
     ],
-    []
+    [],
   );
   const onKeyboardMove = useMemo(
     () =>
@@ -107,49 +137,63 @@ export const KeyboardProvider = ({
             },
           },
         ],
-        { useNativeDriver: true }
+        // Setting useNativeDriver to true on web triggers a warning due to the absence of a native driver for web. Therefore, it is set to false.
+        { useNativeDriver: Platform.OS !== "web" },
       ),
-    []
+    [],
   );
   // handlers
   const updateSharedValues = (event: NativeEvent, platforms: string[]) => {
-    'worklet';
+    "worklet";
 
-    if (platforms.includes(Platform.OS)) {
+    if (platforms.includes(OS)) {
+      // eslint-disable-next-line react-compiler/react-compiler
       progressSV.value = event.progress;
       heightSV.value = -event.height;
     }
   };
-  const handler = useAnimatedKeyboardHandler(
+  const keyboardHandler = useAnimatedKeyboardHandler(
     {
       onKeyboardMoveStart: (event: NativeEvent) => {
-        'worklet';
+        "worklet";
 
-        broadcast('onStart', event);
-        updateSharedValues(event, ['ios']);
+        updateSharedValues(event, ["ios"]);
       },
       onKeyboardMove: (event: NativeEvent) => {
-        'worklet';
+        "worklet";
 
-        broadcast('onMove', event);
-        updateSharedValues(event, ['android']);
-      },
-      onKeyboardMoveEnd: (event: NativeEvent) => {
-        'worklet';
-
-        broadcast('onEnd', event);
+        updateSharedValues(event, ["android"]);
       },
       onKeyboardMoveInteractive: (event: NativeEvent) => {
-        'worklet';
+        "worklet";
 
-        updateSharedValues(event, ['android', 'ios']);
-        broadcast('onInteractive', event);
+        updateSharedValues(event, ["android", "ios"]);
+      },
+      onKeyboardMoveEnd: (event: NativeEvent) => {
+        "worklet";
+
+        updateSharedValues(event, ["android"]);
       },
     },
-    []
+    [],
   );
-  // effects
-  useEffect(() => {
+  const inputLayoutHandler = useFocusedInputLayoutHandler(
+    {
+      onFocusedInputLayoutChanged: (e) => {
+        "worklet";
+
+        if (e.target !== -1) {
+          layout.value = e;
+        } else {
+          layout.value = null;
+        }
+      },
+    },
+    [],
+  );
+
+  // layout effects
+  useLayoutEffect(() => {
     if (enabled) {
       applyMonkeyPatch();
     } else {
@@ -157,18 +201,25 @@ export const KeyboardProvider = ({
     }
   }, [enabled]);
 
+  if (__DEV__) {
+    controlEdgeToEdgeValues({ statusBarTranslucent, navigationBarTranslucent });
+  }
+
   return (
     <KeyboardContext.Provider value={context}>
       <KeyboardControllerViewAnimated
+        ref={viewTagRef}
         enabled={enabled}
-        onKeyboardMoveReanimated={handler}
-        onKeyboardMoveStart={Platform.OS === 'ios' ? onKeyboardMove : undefined}
-        onKeyboardMove={Platform.OS === 'android' ? onKeyboardMove : undefined}
-        onKeyboardMoveInteractive={onKeyboardMove}
-        navigationBarTranslucent={navigationBarTranslucent}
-        statusBarTranslucent={statusBarTranslucent}
-        // @ts-expect-error https://github.com/software-mansion/react-native-reanimated/pull/4923
+        navigationBarTranslucent={IS_EDGE_TO_EDGE || navigationBarTranslucent}
+        statusBarTranslucent={IS_EDGE_TO_EDGE || statusBarTranslucent}
         style={styles.container}
+        // on*Reanimated prop must precede animated handlers to work correctly
+        onKeyboardMoveReanimated={keyboardHandler}
+        onKeyboardMoveStart={OS === "ios" ? onKeyboardMove : undefined}
+        onKeyboardMove={OS === "android" ? onKeyboardMove : undefined}
+        onKeyboardMoveInteractive={onKeyboardMove}
+        onKeyboardMoveEnd={OS === "android" ? onKeyboardMove : undefined}
+        onFocusedInputLayoutChangedReanimated={inputLayoutHandler}
       >
         {children}
       </KeyboardControllerViewAnimated>

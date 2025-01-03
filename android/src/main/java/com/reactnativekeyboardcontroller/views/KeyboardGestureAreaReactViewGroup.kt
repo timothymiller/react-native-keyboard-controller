@@ -11,22 +11,26 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.views.view.ReactViewGroup
-import com.reactnativekeyboardcontroller.KeyboardAnimationController
 import com.reactnativekeyboardcontroller.extensions.copyBoundsInWindow
-import com.reactnativekeyboardcontroller.interpolators.Interpolator
-import com.reactnativekeyboardcontroller.interpolators.IosInterpolator
-import com.reactnativekeyboardcontroller.interpolators.LinearInterpolator
+import com.reactnativekeyboardcontroller.extensions.px
+import com.reactnativekeyboardcontroller.interactive.KeyboardAnimationController
+import com.reactnativekeyboardcontroller.interactive.interpolators.Interpolator
+import com.reactnativekeyboardcontroller.interactive.interpolators.IosInterpolator
+import com.reactnativekeyboardcontroller.interactive.interpolators.LinearInterpolator
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
-val interpolators = mapOf(
-  "linear" to LinearInterpolator(),
-  "ios" to IosInterpolator(),
-)
+val interpolators =
+  mapOf(
+    "linear" to LinearInterpolator(),
+    "ios" to IosInterpolator(),
+  )
 
 @Suppress("detekt:TooManyFunctions")
 @SuppressLint("ViewConstructor")
-class KeyboardGestureAreaReactViewGroup(private val reactContext: ThemedReactContext) : ReactViewGroup(reactContext) {
+class KeyboardGestureAreaReactViewGroup(
+  private val reactContext: ThemedReactContext,
+) : ReactViewGroup(reactContext) {
   // internal state management
   private var isHandling = false
   private var lastTouchX = 0f
@@ -35,6 +39,7 @@ class KeyboardGestureAreaReactViewGroup(private val reactContext: ThemedReactCon
   private var keyboardHeight = 0
 
   // react props
+  private var offset = 0
   private var interpolator: Interpolator = LinearInterpolator()
   private var scrollKeyboardOnScreenWhenNotVisible = false
   private var scrollKeyboardOffScreenWhenVisible = true
@@ -63,6 +68,10 @@ class KeyboardGestureAreaReactViewGroup(private val reactContext: ThemedReactCon
   }
 
   // region Props setters
+  fun setOffset(offset: Double) {
+    this.offset = offset.toFloat().px.toInt()
+  }
+
   fun setInterpolator(interpolator: String) {
     this.interpolator = interpolators[interpolator] ?: LinearInterpolator()
   }
@@ -121,11 +130,13 @@ class KeyboardGestureAreaReactViewGroup(private val reactContext: ThemedReactCon
         }
         // If we currently have control, we can update the IME insets to 'scroll'
         // the IME in
-        val moveBy = this.interpolator.interpolate(
-          dy.roundToInt(),
-          this.getWindowHeight() - event.rawY.toInt(),
-          controller.getCurrentKeyboardHeight(),
-        )
+        val moveBy =
+          this.interpolator.interpolate(
+            dy.roundToInt(),
+            this.getWindowHeight() - event.rawY.toInt(),
+            controller.getCurrentKeyboardHeight(),
+            offset,
+          )
 
         if (moveBy != 0) {
           controller.insetBy(moveBy)
@@ -134,8 +145,10 @@ class KeyboardGestureAreaReactViewGroup(private val reactContext: ThemedReactCon
         !controller.isInsetAnimationRequestPending() &&
         shouldStartRequest(
           dy = dy,
-          imeVisible = ViewCompat.getRootWindowInsets(this)
-            ?.isVisible(WindowInsetsCompat.Type.ime()) == true,
+          imeVisible =
+            ViewCompat
+              .getRootWindowInsets(this)
+              ?.isVisible(WindowInsetsCompat.Type.ime()) == true,
         )
       ) {
         // If we don't currently have control (and a request isn't pending),
@@ -203,7 +216,10 @@ class KeyboardGestureAreaReactViewGroup(private val reactContext: ThemedReactCon
    * Returns true if the given [dy], [IME visibility][imeVisible], and constructor options
    * support a IME animation request.
    */
-  private fun shouldStartRequest(dy: Float, imeVisible: Boolean) = when {
+  private fun shouldStartRequest(
+    dy: Float,
+    imeVisible: Boolean,
+  ) = when {
     // If the user is scroll up, return true if scrollImeOnScreenWhenNotVisible is true, and
     // the IME is not currently visible
     dy < 0 -> !imeVisible && scrollKeyboardOnScreenWhenNotVisible

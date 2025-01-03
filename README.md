@@ -13,7 +13,10 @@ Keyboard manager which works in identical way on both iOS and Android.
 - module for changing soft input mode on Android 🤔
 - reanimated support 🚀
 - interactive keyboard dismissing 👆📱
-- re-worked prebuilt components (such as `KeyboardAvoidingView`) 📚
+- prebuilt components (`KeyboardStickyView`, `KeyboardAwareScrollView`, re-worked `KeyboardAvoidingView`) 📚
+- `KeyboardToolbar` with easy behavior customization of _**previous**_, _**next**_ and _**done**_ buttons in the keyboard toolbar 📐
+- show anything over the keyboard (without dismissing it) using `OverKeyboardView` 🌐
+- easy focused input information retrieval 📝 🔮
 - works with any navigation library 🧭
 - and more is coming... Stay tuned! 😊
 
@@ -21,10 +24,10 @@ Keyboard manager which works in identical way on both iOS and Android.
 
 Install `react-native-keyboard-controller` package from npm:
 
-```sh
+```shell
 yarn add react-native-keyboard-controller
 # or
-# npm install react-native-keyboard-controller --save
+npm install react-native-keyboard-controller --save
 ```
 
 ## Documentation
